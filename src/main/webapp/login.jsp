@@ -13,12 +13,16 @@
     <script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
     <script>
         $(function () {
+
+            if (window.top!=window){
+                window.top.location=window.location;
+            }
             //页面加载完毕后，将用户文本框中的内容清空
             $("#loginAct").val("");
             //    页面加载完毕后让用户文本框自动获得焦点
             $("#loginAct").focus();
             //      为按钮绑定事件执行登录操作
-            $("#submitbtn").click(function () {
+            $("#submitBtn").click(function () {
                 login();
             })
             //为当前登录窗口绑定敲键盘事件
@@ -61,7 +65,7 @@
                     //如果登陆成功
                     if (data.success) {
                         //跳转到工作台初始页
-                        window.location.href = "workbench/index.html";
+                        window.location.href = "workbench/index.jsp";
                         //    如果登陆失败
                     } else {
                         $("#msg").html(data.msg);
@@ -86,7 +90,7 @@
         <div class="page-header">
             <h1>登录</h1>
         </div>
-        <form action="workbench/index.html" class="form-horizontal" role="form">
+        <form action="workbench/index.jsp" class="form-horizontal" role="form">
             <div class="form-group form-group-lg">
                 <div style="width: 350px;">
                     <input class="form-control" type="text" placeholder="用户名" id="loginAct">
@@ -96,7 +100,7 @@
                 </div>
                 <div class="checkbox" style="position: relative;top: 30px; left: 10px;">
 
-                    <span id="msg" style="color: red">123</span>
+                    <span id="msg" style="color: red"></span>
 
                 </div>
                 <%--                注意:
@@ -104,7 +108,7 @@
                                     一定要将按钮的类型设置为button
                                     按钮所触发的行为应该是由自己手动写js代码决定
                 --%>
-                <button type="button" id="submitbtn" class="btn btn-primary btn-lg btn-block"
+                <button type="button" id="submitBtn" class="btn btn-primary btn-lg btn-block"
                         style="width: 350px; position: relative;top: 45px;">登录
                 </button>
             </div>
