@@ -25,6 +25,16 @@
         $(function () {
             //为创建按钮绑定事件，打开添加操作的模态窗口
             $("#addBtn").click(function () {
+
+                $(".time").datetimepicker({
+                    minView: "month",
+                    language: 'zh-CN',
+                    format: 'yyyy-mm-dd',
+                    autoclose: true,
+                    todayBtn: true,
+                    pickerPosition: "bottom-left"
+                });
+
                 /*
                 * 操作模态窗口的方式：
                 *   需要操作的模态窗口的jquery对象，调用modal方法，为该方法传递参数
@@ -34,8 +44,8 @@
                 //走后台，目的是为了取得用户信息列表，为所有者下拉框铺值
 
                 $.ajax({
-                    url: "workbench/Activity/getUserList.do",
-                    data: {},
+                    url: "workbench/activity/getUserList.do",
+                    // data: {},
                     type: "get",
                     dataType: "json",
                     success: function (data) {
@@ -46,16 +56,68 @@
                         var html = "<option></option>";
                         //遍历出来的每一个n，就是每一个user对象
                         $.each(data, function (i, n) {
-                            html += "<option value=''"+n.id+">"+n.name+"</option>";
+                            html += "<option value='" + n.id + "'>" + n.name + "</option>";
                         })
 
                         $("#create-owner").html(html);
 
-                    //    所有者下拉框处理完毕后，展现模态窗口
+                        //将当前登录的用户设置为下拉框默认的选项
+                        var id = "${user.id}";
+                        $("#create-owner").val(id);
+
+                        //    所有者下拉框处理完毕后，展现模态窗口
+                        $("#createActivityModal").modal("show");
                     }
                 })
             })
-        })
+
+            //    为保存按钮绑定事件执行添加操作
+            $("#saveBtn").click(function () {
+                $.ajax({
+                    url: "workbench/activity/save.do",
+                    data: {
+                        "owner": $.trim($("#create-owner").val()),
+                        "name": $.trim($("#create-name").val()),
+                        "startDate": $.trim($("#create-startDate").val()),
+                        "endDate": $.trim($("#create-endDate").val()),
+                        "cost": $.trim($("#create-cost").val()),
+                        "description": $.trim($("#create-description").val()),
+                    },
+                    type: "post",
+                    dataType: "json",
+                    success: function (data) {
+                        /*
+                            data
+                             {"success":true/false}
+                        */
+                        if (data.success) {
+                            //添加成功后
+                            //刷新市场活动信息列表（局部刷新）
+
+                            //清空添加操作模态窗口中的数据
+                            /*
+                                我们拿到了form表单的jquery对象，提供了submit()方法让我们提交表单，
+                                但是表单的jquery对象没有为我们提供reset()方法让我们重置表单（这是个坑）
+                                虽然jquery没有为我们提供reset方法，但是原生js为我们提供了reset()方法，
+                                我们要将jquery对象转换为原生dom对象
+
+                                jquery对象转换为dom对象：
+                                    jquery对象[下标]
+                                dom对象转换为jquery对象：
+                                    $(dom)
+                             */
+
+                            $("#activityAddForm")[0].reset();
+
+                            //关闭添加操作的模态窗口
+                            $("#createActivityModal").modal("hide");
+                        } else {
+                            alert("添加市场活动失败")
+                        }
+                    }
+                })
+            })
+        });
 
     </script>
 </head>
@@ -73,7 +135,7 @@
             </div>
             <div class="modal-body">
 
-                <form class="form-horizontal" role="form">
+                <form id="activityAddForm" class="form-horizontal" role="form">
 
                     <div class="form-group">
                         <label for="create-owner" class="col-sm-2 control-label">所有者<span
@@ -83,21 +145,21 @@
 
                             </select>
                         </div>
-                        <label for="create-marketActivityName" class="col-sm-2 control-label">名称<span
+                        <label for="create-name" class="col-sm-2 control-label">名称<span
                                 style="font-size: 15px; color: red;">*</span></label>
                         <div class="col-sm-10" style="width: 300px;">
-                            <input type="text" class="form-control" id="create-marketActivityName">
+                            <input type="text" class="form-control" id="create-name">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="create-startTime" class="col-sm-2 control-label">开始日期</label>
+                        <label for="create-startDate" class="col-sm-2 control-label">开始日期</label>
                         <div class="col-sm-10" style="width: 300px;">
-                            <input type="text" class="form-control" id="create-startTime">
+                            <input type="text" class="form-control time" id="create-startDate" readonly>
                         </div>
-                        <label for="create-endTime" class="col-sm-2 control-label">结束日期</label>
+                        <label for="create-endDate" class="col-sm-2 control-label">结束日期</label>
                         <div class="col-sm-10" style="width: 300px;">
-                            <input type="text" class="form-control" id="create-endTime">
+                            <input type="text" class="form-control time" id="create-endDate" readonly>
                         </div>
                     </div>
                     <div class="form-group">
@@ -108,9 +170,9 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="create-describe" class="col-sm-2 control-label">描述</label>
+                        <label for="create-description" class="col-sm-2 control-label">描述</label>
                         <div class="col-sm-10" style="width: 81%;">
-                            <textarea class="form-control" rows="3" id="create-describe"></textarea>
+                            <textarea class="form-control" rows="3" id="create-description"></textarea>
                         </div>
                     </div>
 
@@ -118,8 +180,13 @@
 
             </div>
             <div class="modal-footer">
+                <%--
+                data-dismiss="modal"
+                    表示关闭模态窗口
+
+                --%>
                 <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal">保存</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">保存</button>
             </div>
         </div>
     </div>
