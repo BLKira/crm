@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-    @Override
+
     public List<User> getUserList() {
 
         List<User> uList =userDao.getUserList();
