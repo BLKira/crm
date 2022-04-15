@@ -9,10 +9,10 @@ import com.ava.crm.utils.ServiceFactory;
 import com.ava.crm.utils.UUIDUtil;
 import com.ava.crm.vo.PaginationVO;
 import com.ava.crm.workbench.domain.Activity;
+import com.ava.crm.workbench.domain.ActivityRemark;
 import com.ava.crm.workbench.service.ActivityService;
 import com.ava.crm.workbench.service.impl.ActivityServiceImpl;
 
-import javax.jws.Oneway;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,8 +36,110 @@ public class ActivityController extends HttpServlet {
             save(request, response);
         } else if ("/workbench/activity/pageList.do".equals(path)) {
             pageList(request, response);
+        } else if ("/workbench/activity/delete.do".equals(path)) {
+            delete(request, response);
+        } else if ("/workbench/activity/getUserListAndActivity.do".equals(path)) {
+            getUserListAndActivity(request, response);
+        } else if ("/workbench/activity/update.do".equals(path)) {
+            update(request, response);
+        } else if ("/workbench/activity/detail.do".equals(path)) {
+            detail(request, response);
+        } else if ("/workbench/activity/getRemarkListByAid.do".equals(path)) {
+            getRemarkListByAid(request, response);
         }
 
+    }
+
+    private void getRemarkListByAid(HttpServletRequest request, HttpServletResponse response) {
+        System.out.println("根据市场活动id，取得备注信息列表");
+
+        String activityId = request.getParameter("activityId");
+
+        ActivityService as = (ActivityService) ServiceFactory.getService(new ActivityServiceImpl());
+
+        List<ActivityRemark> arList = as.getRemarkListByAid(activityId);
+
+        PrintJson.printJsonObj(response,arList);
+    }
+
+    private void detail(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("进入到跳转到详细信息页的操作");
+
+        String id = request.getParameter("id");
+        ActivityService activityService = (ActivityService) ServiceFactory.getService(new ActivityServiceImpl());
+
+        Activity a = activityService.detail(id);
+
+        request.setAttribute("a", a);
+
+        request.getRequestDispatcher("/workbench/activity/detail.jsp").forward(request, response);
+
+
+    }
+
+    private void update(HttpServletRequest request, HttpServletResponse response) {
+        System.out.println("执行市场活动修改操作");
+
+        String id = request.getParameter("id");
+        String owner = request.getParameter("owner");
+        String name = request.getParameter("name");
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
+        String cost = request.getParameter("cost");
+        String description = request.getParameter("description");
+//        修改时间，当前系统时间
+        String editTime = DateTimeUtil.getSysTime();
+//        修改人，当前登录用户
+        String editBy = ((User) request.getSession().getAttribute("user")).getName();
+
+        Activity activity = new Activity();
+        activity.setId(id);
+        activity.setOwner(owner);
+        activity.setName(name);
+        activity.setStartDate(startDate);
+        activity.setEndDate(endDate);
+        activity.setCost(cost);
+        activity.setDescription(description);
+        activity.setEditTime(editTime);
+        activity.setEditBy(editBy);
+
+        ActivityService as = (ActivityService) ServiceFactory.getService(new ActivityServiceImpl());
+
+        boolean flag = as.update(activity);
+        PrintJson.printJsonFlag(response, flag);
+
+    }
+
+    private void getUserListAndActivity(HttpServletRequest request, HttpServletResponse response) {
+        System.out.println("进入到查询用户信息列表和根据市场活动查询单挑记录的操作");
+
+        String id = request.getParameter("id");
+        ActivityService activityService = (ActivityService) ServiceFactory.getService(new ActivityServiceImpl());
+
+        /*
+            总结：controller调用service的方法，返回值应该是什么
+                前端要什么，从service层取什么
+            前端需要的，管业务层去要
+            uList
+            a
+            map
+         */
+        Map<String, Object> map = activityService.getUserListAndActivity(id);
+
+        PrintJson.printJsonObj(response, map);
+
+
+    }
+
+    private void delete(HttpServletRequest request, HttpServletResponse response) {
+        System.out.println("执行市场活动删除操作");
+
+        String[] ids = request.getParameterValues("id");
+        ActivityService activityService = (ActivityService) ServiceFactory.getService(new ActivityServiceImpl());
+
+        boolean flag = activityService.delete(ids);
+
+        PrintJson.printJsonFlag(response, flag);
     }
 
     private void pageList(HttpServletRequest request, HttpServletResponse response) {
@@ -74,7 +176,7 @@ public class ActivityController extends HttpServlet {
          */
         PaginationVO<Activity> vo = as.pageList(map);
 
-        PrintJson.printJsonObj(response,vo);
+        PrintJson.printJsonObj(response, vo);
 
     }
 
